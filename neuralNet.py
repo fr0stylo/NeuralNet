@@ -103,7 +103,7 @@ def getTrendsData():
                 break
 
             if date.date() >= twoYearsAgoDate.date():
-                trends.append(interest)
+                trends.append((interest / 100))
 
     return trends
 
