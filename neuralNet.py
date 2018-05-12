@@ -1,4 +1,8 @@
 from numpy import array, random, dot, mean, abs, tanh, ones
+import wget
+import os
+from datetime import datetime, timedelta
+from pytrends.request import TrendReq
 
 
 class Net():
@@ -58,18 +62,67 @@ class Net():
         print "Biases:"
         print self.biases
 
+def getBlockChainData():
+    btcPriceFileName = 'market-price.csv'
 
-def readAndPrepareData():
+    if os.path.exists(btcPriceFileName):
+        os.remove(btcPriceFileName)
+
+    blockChainApiLink = 'https://api.blockchain.info/charts/market-price?timespan=2years&format=csv'
+    wget.download(blockChainApiLink)
+
     data = []
-    resolved_data = {}
+
     with open('market-price.csv', 'r') as file:
         for line in file:
             data.append(float(line.split(',')[1]))
 
-    for i in xrange(len(data) - 1):
-        resolved_data[i] = {"price": data[i + 1], "change": calculateChange(data[i], data[i + 1])}
+    return data
+
+def getTrendsData():
+    currentDate = datetime.today()
+    twoYearsAgoDate = datetime.now() - timedelta(days=2*365 + 7)
+
+    pytrends = TrendReq(hl='en-GB', tz=-180)
+    kw_list = ["bitcoin"]
+    timeframe = '{0} {1}'.format(twoYearsAgoDate.strftime('%Y-%m-%d'), currentDate.strftime('%Y-%m-%d'))
+    pytrends.build_payload(kw_list,timeframe=timeframe)
+    interest_over_time_df = pytrends.interest_over_time()
+
+    trends = []
+    twoYearsAgoDate = datetime.now() - timedelta(days=2 * 365)
+
+    for item in interest_over_time_df.itertuples():
+        date = item[0]
+        interest = item[1]
+
+        for i in xrange(7):
+            date = date + timedelta(days=1)
+
+            if date.date() == datetime.now().date():
+                break
+
+            if date.date() >= twoYearsAgoDate.date():
+                trends.append(interest)
+
+    return trends
+
+
+
+def prepareData():
+    blockchainData = getBlockChainData()
+    trendsData = getTrendsData()
+    resolved_data = {}
+
+    for i in xrange(len(blockchainData) - 1):
+        resolved_data[i] = {
+            "price": blockchainData[i + 1],
+            "change": calculateChange(blockchainData[i], blockchainData[i + 1]),
+            "trend": trendsData[i + 1]
+        }
 
     resolved_data = {k: v for k, v in resolved_data.iteritems() if v["change"] < 1}
+
     return resolved_data
 
 
@@ -89,7 +142,7 @@ if __name__ == '__main__':
 
     neural_network.print_params()
 
-    data = readAndPrepareData()
+    data = prepareData()
 
     print "Training..."
 
@@ -104,10 +157,10 @@ if __name__ == '__main__':
                 # array([data[j + 1]["change"]]).T,
                 # array([data[j + 2]["change"]]).T,
                 # array([data[j + 3]["change"]]).T,
-                array([data[j]["change"], j % 12]).T,
-                array([data[j + 1]["change"], j % 12]).T,
-                array([data[j + 2]["change"], j % 12]).T,
-                array([data[j + 3]["change"], j % 12]).T
+                array([data[j]["change"], data[j]["trend"]]).T,
+                array([data[j + 1]["change"], data[j + 1]["trend"]]).T,
+                array([data[j + 2]["change"], data[j + 2]["trend"]]).T,
+                array([data[j + 3]["change"], data[j + 3]["trend"]]).T
             ]).T
         )
 
@@ -127,10 +180,10 @@ if __name__ == '__main__':
             # array([data[j + 1]["change"]]).T,
             # array([data[j + 2]["change"]]).T,
             # array([data[j + 3]["change"]]).T,
-            array([data[j]["change"], j % 12]).T,
-            array([data[j + 1]["change"], j % 12]).T,
-            array([data[j + 2]["change"], j % 12]).T,
-            array([data[j + 3]["change"], j % 12]).T
+            array([data[j]["change"], data[j]["trend"]]).T,
+            array([data[j + 1]["change"], data[j + 1]["trend"]]).T,
+            array([data[j + 2]["change"], data[j + 2]["trend"]]).T,
+            array([data[j + 3]["change"], data[j + 3]["trend"]]).T
         ]).T
 
         test_set_outputs = array([[data[j + 4]["change"]]])
