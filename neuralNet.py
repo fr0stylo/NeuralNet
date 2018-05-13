@@ -56,11 +56,11 @@ class Net():
         return self._feed_forward(inputs)[-1]
 
     def print_params(self):
-        print "Weights:"
-        print self.weights
+       print "Weights:"
+       print self.weights
 
-        print "Biases:"
-        print self.biases
+       print "Biases:"
+       print self.biases
 
 def getBlockChainData():
     btcPriceFileName = 'market-price.csv'
@@ -114,7 +114,7 @@ def prepareData():
     trendsData = getTrendsData()
     resolved_data = {}
 
-    for i in xrange(len(blockchainData) - 1):
+    for i in xrange(len(blockchainData) - 2):
         resolved_data[i] = {
             "price": blockchainData[i + 1],
             "change": calculateChange(blockchainData[i], blockchainData[i + 1]),
@@ -131,11 +131,10 @@ def calculateChange(last, now):
 
 
 if __name__ == '__main__':
-    lr = 0.005
+    lr = 0.0005
     input_count = 4
-    epochs = 1000
-    training_set_size = 70
-    test_set_size = 30
+    epochs = 5000
+    training_set_size = 85
     layer_count = 3
 
     neural_network = Net(learning_rate=lr, inputs_count=input_count, layer_count=layer_count)
@@ -149,19 +148,13 @@ if __name__ == '__main__':
     training_set_inputs = []
     training_set_outputs = []
 
-    # TODO: input strategy refactor
     for j in xrange((len(data) / 100 * training_set_size) - 4):
+        input_matrix = []
+        for k in xrange(input_count):
+            input_matrix.append(array([data[j + k]["change"]]).T)
+
         training_set_inputs.append(
-            array([
-                # array([data[j]["change"]]).T,
-                # array([data[j + 1]["change"]]).T,
-                # array([data[j + 2]["change"]]).T,
-                # array([data[j + 3]["change"]]).T,
-                array([data[j]["change"], data[j]["trend"]]).T,
-                array([data[j + 1]["change"], data[j + 1]["trend"]]).T,
-                array([data[j + 2]["change"], data[j + 2]["trend"]]).T,
-                array([data[j + 3]["change"], data[j + 3]["trend"]]).T
-            ]).T
+            array(input_matrix).T
         )
 
         training_set_outputs.append(array([[data[j + 4]["change"]]]))
@@ -175,16 +168,11 @@ if __name__ == '__main__':
     mae_dummys = []
 
     for j in xrange(len(data) / 100 * training_set_size, len(data) - 4):
-        test_set_inputs = array([
-            # array([data[j]["change"]]).T,
-            # array([data[j + 1]["change"]]).T,
-            # array([data[j + 2]["change"]]).T,
-            # array([data[j + 3]["change"]]).T,
-            array([data[j]["change"], data[j]["trend"]]).T,
-            array([data[j + 1]["change"], data[j + 1]["trend"]]).T,
-            array([data[j + 2]["change"], data[j + 2]["trend"]]).T,
-            array([data[j + 3]["change"], data[j + 3]["trend"]]).T
-        ]).T
+        test_matrix = []
+        for k in xrange(input_count):
+            test_matrix.append(array([data[j + k]["change"]]).T)
+
+        test_set_inputs = array(test_matrix).T
 
         test_set_outputs = array([[data[j + 4]["change"]]])
 
