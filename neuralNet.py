@@ -131,7 +131,7 @@ def calculateChange(last, now):
 
 
 if __name__ == '__main__':
-    lr = 0.0005
+    lr = 0.01
     input_count = 4
     epochs = 5000
     training_set_size = 85
