@@ -179,10 +179,12 @@ if __name__ == '__main__':
         prediction = neural_network.predict(test_set_inputs)
         mae_predictions.append(mean(abs(test_set_outputs - prediction)))
         mae_dummys.append(mean(abs(test_set_outputs - array([[data[j + 3]["change"]]]))))
+        if j > len(data) - 34:
+            print "Spetas:" + str(prediction) + " Tikras: " + str(test_set_outputs)
 
     mase = sum(mae_predictions) / sum(mae_dummys)
 
     print "avg MASE:"
     print mase
 
-    neural_network.print_params()
+    # neural_network.print_params()
